@@ -14,8 +14,6 @@ jobs:
     steps:
       - name: Checkout Mesa source
         uses: actions/checkout@v4
-        with:
-          ref: main-17061956483348987644 # Ye ensure karega ki wo tumhari patched branch use kare
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
@@ -28,6 +26,29 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y meson ninja-build cmake bison flex python3-mako pkg-config libdrm-dev
+
+      - name: Generate Cross File
+        run: |
+          mkdir -p .gitlab-ci/containers
+          cat << 'EOF' > .gitlab-ci/containers/cross-android-aarch64.ini
+          [binaries]
+          ar = 'llvm-ar'
+          c = ['aarch64-linux-android26-clang', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables']
+          cpp = ['aarch64-linux-android26-clang++', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-static-libstdc++']
+          c_ld = 'lld'
+          cpp_ld = 'lld'
+          strip = 'llvm-strip'
+          pkg-config = 'pkg-config'
+
+          [host_machine]
+          system = 'android'
+          cpu_family = 'aarch64'
+          cpu = 'armv8-a'
+          endian = 'little'
+
+          [properties]
+          needs_exe_wrapper = true
+          EOF
 
       - name: Configure Meson for Android ARM64
         run: |
