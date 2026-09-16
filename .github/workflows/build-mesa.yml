@@ -24,10 +24,15 @@ jobs:
           ndk-version: r26b
           add-to-path: true
 
-      - name: Install Build Dependencies
+      - name: Install Build Dependencies & Upgrade Meson
         run: |
           sudo apt-get update
-          sudo apt-get install -y meson ninja-build cmake bison flex python3-mako pkg-config libdrm-dev
+          sudo apt-get install -y cmake bison flex python3-mako pkg-config libdrm-dev python3-pip
+          # Latest Meson aur Ninja install karo (>= 1.4.0)
+          pip3 install --user "meson>=1.4.0" ninja
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "✅ Meson version upgraded successfully!"
+          meson --version
 
       - name: Create Android Cross File
         run: |
@@ -49,7 +54,7 @@ jobs:
 
       - name: Configure Meson for Android ARM64
         run: |
-          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
+          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$HOME/.local/bin:$PATH
           meson setup build-android \
             --cross-file android-aarch64.txt \
             -Dplatforms=android \
