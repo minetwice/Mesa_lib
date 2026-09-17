@@ -63,8 +63,7 @@ jobs:
             -Dgallium-drivers= \
             -Dllvm=disabled \
             -Dgallium-rusticl=false \
-            -Dintel-clc=false \
-            -Dmicrosoft-clc=false \
+            -Dmicrosoft-clc=disabled \
             -Dbuildtype=release
 
       - name: Compile Mesa
