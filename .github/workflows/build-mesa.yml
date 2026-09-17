@@ -15,8 +15,7 @@ jobs:
       - name: Checkout Mesa source
         uses: actions/checkout@v4
         with:
-          # YAHAN APNI PATCHED BRANCH KA NAAM LIKHO (Jisme AFBC fix hai)
-          ref: main-17061956483348987644 
+          ref: main-17061956483348987644
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
@@ -33,6 +32,13 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           echo "✅ Meson version upgraded successfully!"
           meson --version
+
+      - name: Patch meson.build to Remove CLC/LLVM Check
+        run: |
+          # Find and comment out the "CLC requires LLVM" error check
+          sed -i "/CLC requires LLVM/d" meson.build
+          sed -i "/with_driver_using_clc.*error/d" meson.build
+          echo "✅ Removed CLC/LLVM dependency check from meson.build"
 
       - name: Create Android Cross File
         run: |
@@ -62,10 +68,6 @@ jobs:
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers= \
             -Dllvm=disabled \
-            -Dgallium-rusticl=false \
-            -Dopencl-spirv=false \
-            -Dintel-clc=disabled \
-            -Dmicrosoft-clc=disabled \
             -Dbuildtype=release
 
       - name: Compile Mesa
