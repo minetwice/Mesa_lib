@@ -118,5 +118,6 @@ jobs:
           name: fear-launcher-mesa-panvk-arm64
           path: |
             build-android/src/panfrost/vulkan/libvulkan_panfrost.so
-            build-android/src/util/libmesa_util.so
+            build-android/src/util/libmesa_util.a
+          if-no-files-found: ignore
           retention-days: 7
