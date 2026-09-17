@@ -26,7 +26,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build cmake bison flex python3-mako pkg-config libdrm-dev llvm-dev clang libclang-dev spirv-tools python3-pip
-          # Install Meson >= 1.4.0 (required by Mesa)
+          # Install Meson >= 1.4.0 (required by Mesa 26.2.3)
           pip install --upgrade meson>=1.4.0
 
       - name: Generate Cross File
