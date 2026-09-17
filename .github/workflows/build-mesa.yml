@@ -73,6 +73,9 @@ jobs:
           strip = 'llvm-strip'
           pkg-config = 'pkg-config'
 
+          [properties]
+          pkg_config_libdir = '/disable/non/android/system/pc/files'
+
           [host_machine]
           system = 'android'
           cpu_family = 'aarch64'
@@ -96,6 +99,7 @@ jobs:
             -Dglx=disabled \
             -Dopengl=false \
             -Dgbm=disabled \
+            -Dzstd=disabled \
             -Dmesa-clc=system \
             -Dprecomp-compiler=system \
             -Dllvm=disabled \
