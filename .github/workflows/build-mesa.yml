@@ -33,6 +33,12 @@ jobs:
           echo "✅ Meson version upgraded successfully!"
           meson --version
 
+      - name: Patch meson.build to Force Disable CLC
+        run: |
+          # Force with_clc to false to bypass the LLVM requirement for PanVK
+          sed -i '/with_clc = get_option/,/with_driver_using_cl/c\  with_clc = false' meson.build
+          echo "✅ Successfully patched meson.build to disable CLC!"
+
       - name: Create Android Cross File
         run: |
           cat << 'EOF' > android-aarch64.txt
