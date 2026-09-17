@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout Mesa source
         uses: actions/checkout@v4
+        with:
+          # YAHAN APNI PATCHED BRANCH KA NAAM LIKHO
+          ref: main-17061956483348987644 
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
@@ -22,43 +25,44 @@ jobs:
           ndk-version: r26b
           add-to-path: true
 
-      - name: Install Build Dependencies
+      - name: Install Build Dependencies & Upgrade Meson
         run: |
           sudo apt-get update
-          sudo apt-get install -y meson ninja-build cmake bison flex python3-mako pkg-config libdrm-dev llvm-dev clang libclang-dev spirv-tools
+          sudo apt-get install -y cmake bison flex python3-mako pkg-config libdrm-dev python3-pip
+          pip3 install --user "meson>=1.4.0" ninja
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "✅ Meson version upgraded successfully!"
+          meson --version
 
-      - name: Generate Cross File
+      - name: Create Android Cross File
         run: |
-          mkdir -p .gitlab-ci/containers
-          cat << 'EOF' > .gitlab-ci/containers/cross-android-aarch64.ini
+          cat << 'EOF' > android-aarch64.txt
           [binaries]
+          c = 'aarch64-linux-android24-clang'
+          cpp = 'aarch64-linux-android24-clang++'
           ar = 'llvm-ar'
-          c = ['aarch64-linux-android26-clang', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables']
-          cpp = ['aarch64-linux-android26-clang++', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-static-libstdc++']
-          c_ld = 'lld'
-          cpp_ld = 'lld'
           strip = 'llvm-strip'
           pkg-config = 'pkg-config'
 
           [host_machine]
           system = 'android'
           cpu_family = 'aarch64'
-          cpu = 'armv8-a'
+          cpu = 'aarch64'
           endian = 'little'
-
-          [properties]
-          needs_exe_wrapper = true
           EOF
+          echo "✅ Custom cross file created!"
 
       - name: Configure Meson for Android ARM64
         run: |
-          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
+          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$HOME/.local/bin:$PATH
           meson setup build-android \
-            --cross-file .gitlab-ci/containers/cross-android-aarch64.ini \
+            --cross-file android-aarch64.txt \
             -Dplatforms=android \
+            -Dandroid-stub=true \
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers= \
-            -Dllvm=enabled \
+            -Dllvm=disabled \
+            -Dgallium-opencl=disabled \
             -Dbuildtype=release
 
       - name: Compile Mesa
