@@ -27,17 +27,32 @@ jobs:
       - name: Install Build Dependencies & Upgrade Meson
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake bison flex python3-mako pkg-config libdrm-dev python3-pip
-          pip3 install --user "meson>=1.4.0" ninja
+          sudo apt-get install -y cmake bison flex python3-mako pkg-config libdrm-dev python3-pip \
+            llvm-dev clang libclang-dev spirv-tools spirv-headers libllvmspirvlib-18-dev llvm-spirv-18 \
+            libexpat1-dev zlib1g-dev libzstd-dev
+          pip3 install --user "meson>=1.4.0" ninja packaging pyyaml
           export PATH="$HOME/.local/bin:$PATH"
           echo "✅ Meson version upgraded successfully!"
           meson --version
 
-      - name: Patch meson.build to Force Disable CLC
+      - name: Build Host Tools (mesa-clc & precomp-compiler)
         run: |
-          # Force with_clc to false to bypass the LLVM requirement for PanVK
-          sed -i '/with_clc = get_option/,/with_driver_using_cl/c\  with_clc = false' meson.build
-          echo "✅ Successfully patched meson.build to disable CLC!"
+          export PATH="$HOME/.local/bin:$PATH"
+          meson setup build-host \
+            -Dgallium-drivers= \
+            -Dvulkan-drivers= \
+            -Dglx=disabled \
+            -Dplatforms= \
+            -Dtools=panfrost \
+            -Dmesa-clc=enabled \
+            -Dinstall-mesa-clc=true \
+            -Dprecomp-compiler=enabled \
+            -Dinstall-precomp-compiler=true \
+            -Dllvm=enabled \
+            --prefix=/tmp/host-tools
+          meson compile -C build-host
+          meson install -C build-host
+          echo "✅ Host tools built successfully!"
 
       - name: Create Android Cross File
         run: |
@@ -59,7 +74,7 @@ jobs:
 
       - name: Configure Meson for Android ARM64
         run: |
-          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$HOME/.local/bin:$PATH
+          export PATH=/tmp/host-tools/bin:$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$HOME/.local/bin:$PATH
           meson setup build-android \
             --cross-file android-aarch64.txt \
             -Dplatforms=android \
@@ -67,6 +82,8 @@ jobs:
             -Dplatform-sdk-version=26 \
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers= \
+            -Dmesa-clc=system \
+            -Dprecomp-compiler=system \
             -Dllvm=disabled \
             -Dgallium-rusticl=false \
             -Dmicrosoft-clc=disabled \
