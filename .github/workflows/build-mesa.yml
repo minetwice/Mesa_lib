@@ -15,7 +15,7 @@ jobs:
       - name: Checkout Mesa source
         uses: actions/checkout@v4
         with:
-          # YAHAN APNI PATCHED BRANCH KA NAAM LIKHO (Jisme AFBC fix hai)
+          # YAHAN APNI PATCHED BRANCH KA NAAM LIKHO
           ref: main-17061956483348987644 
 
       - name: Setup Android NDK
@@ -62,7 +62,6 @@ jobs:
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers= \
             -Dllvm=disabled \
-            -Dclc=disabled \
             -Dgallium-opencl=disabled \
             -Dbuildtype=release
 
