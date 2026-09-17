@@ -59,6 +59,7 @@ jobs:
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers= \
             -Dllvm=enabled \
+            -Dmesa-clc=disabled \
             -Dbuildtype=release
 
       - name: Compile Mesa
