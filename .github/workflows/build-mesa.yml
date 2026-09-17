@@ -35,23 +35,20 @@ jobs:
 
       - name: Patch meson.build to Remove CLC/LLVM Check
         run: |
-          # Find and comment out the "CLC requires LLVM" error check
+          # Find and remove the "CLC requires LLVM" error check
           sed -i "/CLC requires LLVM/d" meson.build
           sed -i "/with_driver_using_clc.*error/d" meson.build
           echo "✅ Removed CLC/LLVM dependency check from meson.build"
 
-      - name: Create Android Cross File (WITH PLATFORM VERSION)
+      - name: Create Android Cross File
         run: |
           cat << 'EOF' > android-aarch64.txt
           [binaries]
-          c = 'aarch64-linux-android24-clang'
-          cpp = 'aarch64-linux-android24-clang++'
+          c = 'aarch64-linux-android26-clang'
+          cpp = 'aarch64-linux-android26-clang++'
           ar = 'llvm-ar'
           strip = 'llvm-strip'
           pkg-config = 'pkg-config'
-
-          [properties]
-          android-platform-version = 24
 
           [host_machine]
           system = 'android'
@@ -59,7 +56,7 @@ jobs:
           cpu = 'aarch64'
           endian = 'little'
           EOF
-          echo "✅ Custom cross file created with API level 24!"
+          echo "✅ Custom cross file created!"
 
       - name: Configure Meson for Android ARM64
         run: |
@@ -68,6 +65,7 @@ jobs:
             --cross-file android-aarch64.txt \
             -Dplatforms=android \
             -Dandroid-stub=true \
+            -Dplatform-sdk-version=26 \
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers= \
             -Dllvm=disabled \
