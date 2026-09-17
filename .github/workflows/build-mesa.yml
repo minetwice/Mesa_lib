@@ -24,6 +24,11 @@ jobs:
           ndk-version: r26b
           add-to-path: true
 
+      - name: Add NDK and Local Binaries to PATH
+        run: |
+          echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Install Build Dependencies & Upgrade Meson
         run: |
           sudo apt-get update
@@ -31,13 +36,11 @@ jobs:
             llvm-dev clang libclang-dev spirv-tools spirv-headers libllvmspirvlib-18-dev llvm-spirv-18 \
             libexpat1-dev zlib1g-dev libzstd-dev
           pip3 install --user "meson>=1.4.0" ninja packaging pyyaml
-          export PATH="$HOME/.local/bin:$PATH"
           echo "✅ Meson version upgraded successfully!"
           meson --version
 
       - name: Build Host Tools (mesa-clc & precomp-compiler)
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
           meson setup build-host \
             -Dgallium-drivers= \
             -Dvulkan-drivers= \
@@ -57,6 +60,7 @@ jobs:
             --prefix=/tmp/host-tools
           meson compile -C build-host
           meson install -C build-host
+          echo "/tmp/host-tools/bin" >> $GITHUB_PATH
           echo "✅ Host tools built successfully!"
 
       - name: Create Android Cross File
@@ -79,7 +83,6 @@ jobs:
 
       - name: Configure Meson for Android ARM64
         run: |
-          export PATH=/tmp/host-tools/bin:$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$HOME/.local/bin:$PATH
           meson setup build-android \
             --cross-file android-aarch64.txt \
             -Dplatforms=android \
