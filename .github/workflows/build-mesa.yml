@@ -40,7 +40,7 @@ jobs:
           sed -i "/with_driver_using_clc.*error/d" meson.build
           echo "✅ Removed CLC/LLVM dependency check from meson.build"
 
-      - name: Create Android Cross File
+      - name: Create Android Cross File (WITH PLATFORM VERSION)
         run: |
           cat << 'EOF' > android-aarch64.txt
           [binaries]
@@ -50,13 +50,16 @@ jobs:
           strip = 'llvm-strip'
           pkg-config = 'pkg-config'
 
+          [properties]
+          android-platform-version = 24
+
           [host_machine]
           system = 'android'
           cpu_family = 'aarch64'
           cpu = 'aarch64'
           endian = 'little'
           EOF
-          echo "✅ Custom cross file created!"
+          echo "✅ Custom cross file created with API level 24!"
 
       - name: Configure Meson for Android ARM64
         run: |
