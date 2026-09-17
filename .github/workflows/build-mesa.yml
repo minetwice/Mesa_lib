@@ -41,7 +41,12 @@ jobs:
           meson setup build-host \
             -Dgallium-drivers= \
             -Dvulkan-drivers= \
+            -Degl=disabled \
+            -Dgles1=disabled \
+            -Dgles2=disabled \
             -Dglx=disabled \
+            -Dopengl=false \
+            -Dgbm=disabled \
             -Dplatforms= \
             -Dtools=panfrost \
             -Dmesa-clc=enabled \
@@ -82,6 +87,12 @@ jobs:
             -Dplatform-sdk-version=26 \
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers= \
+            -Degl=disabled \
+            -Dgles1=disabled \
+            -Dgles2=disabled \
+            -Dglx=disabled \
+            -Dopengl=false \
+            -Dgbm=disabled \
             -Dmesa-clc=system \
             -Dprecomp-compiler=system \
             -Dllvm=disabled \
