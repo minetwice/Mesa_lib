@@ -3146,6 +3146,8 @@ init_driver_workarounds(struct zink_screen *screen)
       break;
    case VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA:
    case VK_DRIVER_ID_MESA_TURNIP:
+   case VK_DRIVER_ID_ARM_PROPRIETARY:
+   case VK_DRIVER_ID_MESA_PANVK:
       screen->driver_workarounds.inconsistent_interpolation = true;
       break;
    default:
@@ -3179,6 +3181,8 @@ init_driver_workarounds(struct zink_screen *screen)
    case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
    case VK_DRIVER_ID_MESA_TURNIP:
    case VK_DRIVER_ID_QUALCOMM_PROPRIETARY:
+   case VK_DRIVER_ID_ARM_PROPRIETARY:
+   case VK_DRIVER_ID_MESA_PANVK:
       screen->driver_workarounds.general_layout = true;
       break;
    default:
