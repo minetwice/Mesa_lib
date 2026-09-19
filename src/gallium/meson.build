@@ -4,6 +4,12 @@
 
 sym_config = configuration_data()
 
+if with_platform_android
+  sym_config.set('mesa_glapi_tls', '')
+else
+  sym_config.set('mesa_glapi_tls', '_mesa_glapi_tls_Context;\n                _mesa_glapi_tls_Dispatch;')
+endif
+
 foreach d : [[with_gallium_r300 or with_gallium_radeonsi or with_gallium_r600, 'radeon_drm_winsys_create'],
              [with_gallium_radeonsi, 'amdgpu_winsys_create'],
              [with_gallium_nouveau, 'nouveau_drm_screen_create'],
