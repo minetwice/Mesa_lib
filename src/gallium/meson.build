@@ -5,7 +5,7 @@
 sym_config = configuration_data()
 
 if with_platform_android
-  sym_config.set('mesa_glapi_tls', '')
+  sym_config.set('mesa_glapi_tls', '__emutls_v._mesa_glapi_tls_Context;\n                __emutls_v._mesa_glapi_tls_Dispatch;')
 else
   sym_config.set('mesa_glapi_tls', '_mesa_glapi_tls_Context;\n                _mesa_glapi_tls_Dispatch;')
 endif

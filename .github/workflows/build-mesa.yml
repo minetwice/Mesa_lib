@@ -1,4 +1,5 @@
-name: Build Mesa PanVK + Zink for Android
+name: Build Mesa PanVK for Android
+
 on:
   workflow_dispatch:
 
@@ -8,7 +9,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
 
     steps:
       - name: Checkout Mesa source
@@ -35,18 +36,19 @@ jobs:
             llvm-dev clang libclang-dev spirv-tools spirv-headers libllvmspirvlib-18-dev llvm-spirv-18 \
             libexpat1-dev zlib1g-dev libzstd-dev
           pip3 install --user "meson>=1.4.0" ninja packaging pyyaml
+          echo "✅ Meson version upgraded successfully!"
           meson --version
 
       - name: Build Host Tools (mesa-clc & precomp-compiler)
         run: |
           meson setup build-host \
-            -Dgallium-drivers= \
+            -Dgallium-drivers=zink \
             -Dvulkan-drivers= \
             -Degl=disabled \
             -Dgles1=disabled \
             -Dgles2=disabled \
             -Dglx=disabled \
-            -Dopengl=false \
+            -Dopengl=true \
             -Dgbm=disabled \
             -Dplatforms= \
             -Dtools=panfrost \
@@ -59,6 +61,7 @@ jobs:
           meson compile -C build-host
           meson install -C build-host
           echo "/tmp/host-tools/bin" >> $GITHUB_PATH
+          echo "✅ Host tools built successfully!"
 
       - name: Create Android Cross File
         run: |
@@ -79,18 +82,10 @@ jobs:
           cpu = 'aarch64'
           endian = 'little'
           EOF
+          echo "✅ Custom cross file created!"
 
-      # NOTE: OSMesa was REMOVED upstream in Mesa 25.1 (gone in 26.2.3).
-      # FearLauncher cannot get libOSMesa from this tree.
-      # We build: PanVK ICD + Zink Gallium (Android).
-      # Launcher should use EGL facade + load GL from libGL/libgallium, or gl4es fallback.
       - name: Configure Meson for Android ARM64
         run: |
-          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$HOME/.local/bin:$PATH
-          # lld >= 17 hard-errors when a version-script symbol got removed by
-          # --gc-sections (dri.sym lists _mesa_glapi_tls_* which Android
-          # builds don't keep). --undefined-version restores old behaviour.
-          export LDFLAGS="-Wl,--undefined-version"
           meson setup build-android \
             --cross-file android-aarch64.txt \
             -Dplatforms=android \
@@ -98,15 +93,17 @@ jobs:
             -Dplatform-sdk-version=26 \
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers=zink \
-            -Dopengl=true \
-            -Degl=enabled \
-            -Dgles2=enabled \
+            -Degl=disabled \
+            -Dgles1=disabled \
+            -Dgles2=disabled \
             -Dglx=disabled \
+            -Dopengl=true \
             -Dgbm=disabled \
-            -Dllvm=disabled \
+            -Dzstd=disabled \
+            -Dallow-fallback-for=libdrm \
             -Dmesa-clc=system \
             -Dprecomp-compiler=system \
-            -Dallow-fallback-for=libdrm \
+            -Dllvm=disabled \
             -Dgallium-rusticl=false \
             -Dmicrosoft-clc=disabled \
             -Dbuildtype=release
@@ -119,11 +116,10 @@ jobs:
       - name: Upload .so Files
         uses: actions/upload-artifact@v4
         with:
-          name: fear-launcher-mesa-panvk-zink-arm64
+          name: fear-launcher-mesa-panvk-arm64
           path: |
             build-android/src/panfrost/vulkan/libvulkan_panfrost.so
-            build-android/src/egl/libEGL_mesa.so
-            build-android/src/gallium/targets/libgl-giga/libglapi.so
             build-android/src/gallium/targets/dri/libgallium_dri.so
-            build-android/src/util/libmesa_util.so
+            build-android/src/util/libmesa_util.a
+          if-no-files-found: ignore
           retention-days: 7
