@@ -94,7 +94,15 @@ jobs:
             -Dplatform-sdk-version=26 \
             -Dvulkan-drivers=panfrost \
             -Dgallium-drivers=zink \
+            -Dopengl=true \
+            -Degl=enabled \
+            -Dgles2=enabled \
+            -Dglx=disabled \
+            -Dgbm=disabled \
             -Dllvm=disabled \
+            -Dmesa-clc=system \
+            -Dprecomp-compiler=system \
+            -Dallow-fallback-for=libdrm \
             -Dgallium-rusticl=false \
             -Dmicrosoft-clc=disabled \
             -Dbuildtype=release
