@@ -1,4 +1,4 @@
-name: Build Mesa PanVK for Android
+name: Build Mesa PanVK + Zink for Android
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     steps:
       - name: Checkout Mesa source
@@ -36,7 +36,6 @@ jobs:
             llvm-dev clang libclang-dev spirv-tools spirv-headers libllvmspirvlib-18-dev llvm-spirv-18 \
             libexpat1-dev zlib1g-dev libzstd-dev
           pip3 install --user "meson>=1.4.0" ninja packaging pyyaml
-          echo "✅ Meson version upgraded successfully!"
           meson --version
 
       - name: Build Host Tools (mesa-clc & precomp-compiler)
@@ -61,7 +60,6 @@ jobs:
           meson compile -C build-host
           meson install -C build-host
           echo "/tmp/host-tools/bin" >> $GITHUB_PATH
-          echo "✅ Host tools built successfully!"
 
       - name: Create Android Cross File
         run: |
@@ -82,9 +80,12 @@ jobs:
           cpu = 'aarch64'
           endian = 'little'
           EOF
-          echo "✅ Custom cross file created!"
 
-      - name: Configure Meson for Android ARM64
+      # NOTE: OSMesa was REMOVED upstream in Mesa 25.1 (gone in 26.2.3).
+      # FearLauncher cannot get libOSMesa from this tree.
+      # We build: PanVK ICD + Zink/softpipe Gallium + desktop OpenGL + EGL (Android).
+      # Launcher should use EGL facade + load GL from libGL/libgallium, or gl4es fallback.
+      - name: Configure Meson for Android ARM64 (Zink + softpipe + PanVK)
         run: |
           meson setup build-android \
             --cross-file android-aarch64.txt \
@@ -92,18 +93,19 @@ jobs:
             -Dandroid-stub=true \
             -Dplatform-sdk-version=26 \
             -Dvulkan-drivers=panfrost \
-            -Dgallium-drivers= \
-            -Degl=disabled \
+            -Dgallium-drivers=zink,softpipe \
+            -Dopengl=true \
+            -Degl=enabled \
             -Dgles1=disabled \
-            -Dgles2=disabled \
+            -Dgles2=enabled \
             -Dglx=disabled \
-            -Dopengl=false \
             -Dgbm=disabled \
             -Dzstd=disabled \
             -Dallow-fallback-for=libdrm \
             -Dmesa-clc=system \
             -Dprecomp-compiler=system \
             -Dllvm=disabled \
+            -Dshared-glapi=enabled \
             -Dgallium-rusticl=false \
             -Dmicrosoft-clc=disabled \
             -Dbuildtype=release
@@ -111,14 +113,39 @@ jobs:
       - name: Compile Mesa
         run: |
           ninja -C build-android
-          echo "✅ Compilation successful!"
+          echo "Compile done"
+          find build-android -name '*.so' | sort
 
-      - name: Upload .so Files
+      - name: Package artifacts
+        run: |
+          mkdir -p out/arm64
+          # PanVK ICD
+          find build-android -name 'libvulkan_panfrost.so' -exec cp -v {} out/arm64/ \;
+          # Gallium / GL / EGL (names vary by meson version)
+          for n in libGL.so libglapi.so libEGL.so libGLESv2.so libgallium_dri.so \
+                   libgallium.so libOSMesa.so; do
+            find build-android -name "$n" -exec cp -v {} out/arm64/ \; 2>/dev/null || true
+          done
+          # Also copy any lib*_gallium*.so
+          find build-android -name 'lib*gallium*.so' -exec cp -v {} out/arm64/ \; 2>/dev/null || true
+          ls -la out/arm64/
+          # ICD json helper for Zink
+          cat > out/arm64/panfrost_icd.json << 'ICD'
+          {
+            "file_format_version": "1.0.0",
+            "ICD": {
+              "library_path": "libvulkan_panfrost.so",
+              "api_version": "1.3"
+            }
+          }
+          ICD
+          (cd out && zip -r fear-launcher-mesa-panvk-zink-arm64.zip arm64)
+          ls -la out/
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fear-launcher-mesa-panvk-arm64
-          path: |
-            build-android/src/panfrost/vulkan/libvulkan_panfrost.so
-            build-android/src/util/libmesa_util.a
-          if-no-files-found: ignore
-          retention-days: 7
+          name: fear-launcher-mesa-panvk-zink-arm64
+          path: out/fear-launcher-mesa-panvk-zink-arm64.zip
+          if-no-files-found: warn
+          retention-days: 14
